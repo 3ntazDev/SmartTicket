@@ -24,7 +24,7 @@ public class SplashActivity extends AppCompatActivity {
 
         // الانتقال إلى صفحة تسجيل الدخول بعد 3 ثوانٍ
         new Handler().postDelayed(() -> {
-            Intent intent = new Intent(SplashActivity.this, SplashActivity.class);
+            Intent intent = new Intent(SplashActivity.this, LoginActivity.class);
             startActivity(intent);
             finish();
         }, 3000); // 3000ms = 3 ثوانٍ
