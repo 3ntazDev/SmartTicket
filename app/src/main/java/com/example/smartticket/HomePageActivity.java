@@ -9,13 +9,15 @@ import android.widget.GridLayout;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 public class HomePageActivity extends AppCompatActivity {
 
     private static final String PREFS_NAME = "TicketPrefs";
-    private Set<String> reservedSeats = new HashSet<>();
+    private Map<String, String> seatReservations = new HashMap<>();
     private GridLayout seatsGrid;
     private String userId; // معرف المستخدم
 
@@ -33,34 +35,36 @@ public class HomePageActivity extends AppCompatActivity {
         // استرداد معرف المستخدم
         userId = getIntent().getStringExtra("USER_ID");
 
-        // استرداد المقاعد المحجوزة لهذا المستخدم فقط
+        // استرداد الحجوزات المحفوظة
         SharedPreferences sharedPreferences = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
-        reservedSeats = sharedPreferences.getStringSet(userId + "_RESERVED_SEATS", new HashSet<>());
+        seatReservations = new HashMap<>();
+        for (Map.Entry<String, ?> entry : sharedPreferences.getAll().entrySet()) {
+            if (entry.getValue() instanceof String) { // التحقق من أن القيمة هي String
+                seatReservations.put(entry.getKey(), (String) entry.getValue());
+            }
+        }
 
         createSeatButtons();
 
         // حجز المقاعد
         bookButton.setOnClickListener(view -> {
-            if (reservedSeats.isEmpty()) {
-                Toast.makeText(HomePageActivity.this, "الرجاء اختيار مقاعد للحجز", Toast.LENGTH_SHORT).show();
-            } else {
-                SharedPreferences.Editor editor = sharedPreferences.edit();
-                editor.putStringSet(userId + "_RESERVED_SEATS", reservedSeats);
-                editor.apply();
-                Toast.makeText(HomePageActivity.this, "تم حجز المقاعد بنجاح!", Toast.LENGTH_SHORT).show();
-                createSeatButtons(); // تحديث الأزرار بعد الحجز
-            }
+            saveReservations();
+            Toast.makeText(HomePageActivity.this, "تم حجز المقاعد بنجاح!", Toast.LENGTH_SHORT).show();
+            createSeatButtons(); // تحديث الأزرار بعد الحجز
         });
 
         // استعراض المقاعد المحجوزة
         viewTicketsButton.setOnClickListener(view -> {
             StringBuilder seats = new StringBuilder("المقاعد المحجوزة:\n");
-            if (reservedSeats.isEmpty()) {
-                seats.append("لا توجد مقاعد محجوزة");
-            } else {
-                for (String seat : reservedSeats) {
-                    seats.append(seat).append("\n");
+            boolean hasReservations = false;
+            for (Map.Entry<String, String> entry : seatReservations.entrySet()) {
+                if (entry.getValue().equals(userId)) {
+                    seats.append(entry.getKey()).append("\n");
+                    hasReservations = true;
                 }
+            }
+            if (!hasReservations) {
+                seats.append("لا توجد مقاعد محجوزة");
             }
             Toast.makeText(HomePageActivity.this, seats.toString(), Toast.LENGTH_LONG).show();
         });
@@ -75,11 +79,19 @@ public class HomePageActivity extends AppCompatActivity {
 
         // إلغاء الحجز
         cancelReservationButton.setOnClickListener(view -> {
-            if (!reservedSeats.isEmpty()) {
-                reservedSeats.clear(); // إلغاء جميع الحجوزات
-                SharedPreferences.Editor editor = sharedPreferences.edit();
-                editor.putStringSet(userId + "_RESERVED_SEATS", reservedSeats);
-                editor.apply();
+            boolean hasCancelled = false;
+            Set<String> seatsToCancel = new HashSet<>();
+            for (Map.Entry<String, String> entry : seatReservations.entrySet()) {
+                if (entry.getValue().equals(userId)) {
+                    seatsToCancel.add(entry.getKey());
+                    hasCancelled = true;
+                }
+            }
+            for (String seat : seatsToCancel) {
+                seatReservations.remove(seat);
+            }
+            if (hasCancelled) {
+                saveReservations();
                 Toast.makeText(HomePageActivity.this, "تم إلغاء جميع الحجوزات!", Toast.LENGTH_SHORT).show();
                 createSeatButtons(); // تحديث الواجهة
             } else {
@@ -88,32 +100,48 @@ public class HomePageActivity extends AppCompatActivity {
         });
     }
 
+    private void saveReservations() {
+        SharedPreferences sharedPreferences = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.clear();
+        for (Map.Entry<String, String> entry : seatReservations.entrySet()) {
+            editor.putString(entry.getKey(), entry.getValue());
+        }
+        editor.apply();
+    }
+
     private void createSeatButtons() {
         seatsGrid.removeAllViews(); // إزالة الأزرار السابقة
         for (int i = 1; i <= 10; i++) {
             Button seatButton = new Button(this);
+            String seatTag = "Seat" + i;
             seatButton.setText(String.valueOf(i));
-            seatButton.setTag("Seat" + i);
+            seatButton.setTag(seatTag);
 
-            // تغيير لون الأزرار
-            if (reservedSeats.contains("Seat" + i)) {
-                seatButton.setEnabled(false);
-                seatButton.setBackgroundColor(getResources().getColor(android.R.color.holo_red_light)); // اللون الأحمر
+            // تحديد لون الأزرار بناءً على الحجوزات
+            if (seatReservations.containsKey(seatTag)) {
+                if (seatReservations.get(seatTag).equals(userId)) {
+                    seatButton.setBackgroundColor(getResources().getColor(android.R.color.holo_blue_light)); // اللون الأزرق
+                } else {
+                    seatButton.setEnabled(false);
+                    seatButton.setBackgroundColor(getResources().getColor(android.R.color.holo_red_light)); // اللون الأحمر
+                }
             } else {
                 seatButton.setBackgroundColor(getResources().getColor(android.R.color.holo_green_light)); // اللون الأخضر
             }
 
             seatButton.setOnClickListener(view -> {
                 String seatNumber = (String) view.getTag();
-                if (reservedSeats.contains(seatNumber)) {
-                    // إلغاء الحجز
-                    reservedSeats.remove(seatNumber);
-                    view.setEnabled(true);
-                    view.setBackgroundColor(getResources().getColor(android.R.color.holo_green_light)); // إعادة اللون الأخضر
-                    Toast.makeText(HomePageActivity.this, "تم إلغاء حجز المقعد " + seatNumber, Toast.LENGTH_SHORT).show();
+                if (seatReservations.containsKey(seatNumber)) {
+                    if (seatReservations.get(seatNumber).equals(userId)) {
+                        // إلغاء الحجز الخاص بالمستخدم
+                        seatReservations.remove(seatNumber);
+                        view.setBackgroundColor(getResources().getColor(android.R.color.holo_green_light)); // اللون الأخضر
+                        Toast.makeText(HomePageActivity.this, "تم إلغاء حجز المقعد " + seatNumber, Toast.LENGTH_SHORT).show();
+                    }
                 } else {
                     // حجز المقعد
-                    reservedSeats.add(seatNumber);
+                    seatReservations.put(seatNumber, userId);
                     view.setBackgroundColor(getResources().getColor(android.R.color.holo_blue_light)); // اللون الأزرق
                     Toast.makeText(HomePageActivity.this, "تم حجز المقعد " + seatNumber, Toast.LENGTH_SHORT).show();
                 }
