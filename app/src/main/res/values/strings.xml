@@ -1,10 +1,9 @@
 <resources>
+    <string name="app_name">SmartTicket</string>
 
-        <string name="app_name">SmartTicket</string>
+    <string name="user_email">Fahad</string>
+    <string name="user_password">123</string>
 
-
-    <string name="user_email">user1@example.com</string>
-    <string name="user_password">password123</string>
-
-
+    <string name="user_email_2">Saad</string>
+    <string name="user_password_2">123</string>
 </resources>
