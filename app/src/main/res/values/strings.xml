@@ -6,4 +6,10 @@
 
     <string name="user_email_2">S</string>
     <string name="user_password_2">123</string>
+
+
+
+    <string name="admin_email">admin@example.com</string>
+    <string name="admin_password">admin123</string>
+
 </resources>

@@ -37,17 +37,19 @@ public class LoginActivity extends AppCompatActivity {
 
                 // التحقق من البريد وكلمة المرور
                 if (isValidUser(enteredEmail, enteredPassword)) {
-                    // إذا كانت البيانات صحيحة
-                    Toast.makeText(LoginActivity.this, "تسجيل الدخول بنجاح!", Toast.LENGTH_SHORT).show();
-
-                    // تحديد معرف المستخدم (يمكن أن يكون البريد أو معرف فريد آخر)
-                    String loggedInUserId = enteredEmail; // استخدم البريد المدخل كمعرف للمستخدم
-
-                    // الانتقال إلى الصفحة الرئيسية مع تمرير معرف المستخدم
-                    Intent intent = new Intent(LoginActivity.this, HomePageActivity.class);
-                    intent.putExtra("USER_ID", loggedInUserId); // تمرير معرف المستخدم
-                    startActivity(intent);
-                    finish();  // إنهاء صفحة تسجيل الدخول
+                    if (enteredEmail.equals(getString(R.string.admin_email))) {
+                        // إذا كان المستخدم مديرًا
+                        Intent intent = new Intent(LoginActivity.this, AdminActivity.class);
+                        startActivity(intent);
+                        finish(); // إنهاء صفحة تسجيل الدخول
+                    } else {
+                        // إذا كان المستخدم عاديًا
+                        String loggedInUserId = enteredEmail; // استخدم البريد المدخل كمعرف للمستخدم
+                        Intent intent = new Intent(LoginActivity.this, HomePageActivity.class);
+                        intent.putExtra("USER_ID", loggedInUserId); // تمرير معرف المستخدم
+                        startActivity(intent);
+                        finish(); // إنهاء صفحة تسجيل الدخول
+                    }
                 } else {
                     // إذا كانت البيانات غير صحيحة
                     Toast.makeText(LoginActivity.this, "البريد الإلكتروني أو كلمة المرور غير صحيحة", Toast.LENGTH_SHORT).show();
@@ -64,7 +66,11 @@ public class LoginActivity extends AppCompatActivity {
         String correctEmail2 = getString(R.string.user_email_2);
         String correctPassword2 = getString(R.string.user_password_2);
 
+        String adminEmail = getString(R.string.admin_email);
+        String adminPassword = getString(R.string.admin_password);
+
         return (email.equals(correctEmail1) && password.equals(correctPassword1)) ||
-                (email.equals(correctEmail2) && password.equals(correctPassword2));
+                (email.equals(correctEmail2) && password.equals(correctPassword2)) ||
+                (email.equals(adminEmail) && password.equals(adminPassword));
     }
 }

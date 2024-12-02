@@ -48,6 +48,7 @@
         android:layout_height="wrap_content"
         android:text="تسجيل خروج"
         tools:layout_editor_absoluteX="135dp"
+        android:background="@drawable/button_background"
         tools:layout_editor_absoluteY="396dp" />
 
     <Button
